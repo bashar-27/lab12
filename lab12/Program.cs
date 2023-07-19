@@ -18,7 +18,7 @@ namespace lab12
 
             var app = builder.Build();
             app.MapControllers();
-            app.MapGet("/", () => "Hello World!");
+            app.MapGet("/", () => "Hello In My Application!");
             
             app.Run();
         }
