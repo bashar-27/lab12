@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using lab12.Data;
 using lab12.Models;
+using lab12.Models.Interfaces;
 
 namespace lab12.Controller
 {
@@ -14,39 +15,25 @@ namespace lab12.Controller
     [ApiController]
     public class RoomsController : ControllerBase
     {
-        private readonly AsyncInnContext _context;
+        private readonly IRoom _room;
 
-        public RoomsController(AsyncInnContext context)
+        public RoomsController(IRoom room)
         {
-            _context = context;
+            _room = room;
         }
 
         // GET: api/Rooms
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Room>>> Getrooms()
         {
-          if (_context.rooms == null)
-          {
-              return NotFound();
-          }
-            return await _context.rooms.ToListAsync();
+            return await _room.GetRoomAsync();
         }
 
         // GET: api/Rooms/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Room>> GetRoom(int id)
         {
-          if (_context.rooms == null)
-          {
-              return NotFound();
-          }
-            var room = await _context.rooms.FindAsync(id);
-
-            if (room == null)
-            {
-                return NotFound();
-            }
-
+            var room = await _room.GetRoomById(id);
             return room;
         }
 
@@ -60,25 +47,8 @@ namespace lab12.Controller
                 return BadRequest();
             }
 
-            _context.Entry(room).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!RoomExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            var updateRoomInfo = await _room.UpdateRoom(room, id);
+            return Ok(updateRoomInfo);
         }
 
         // POST: api/Rooms
@@ -86,39 +56,18 @@ namespace lab12.Controller
         [HttpPost]
         public async Task<ActionResult<Room>> PostRoom(Room room)
         {
-          if (_context.rooms == null)
-          {
-              return Problem("Entity set 'AsyncInnContext.rooms'  is null.");
-          }
-            _context.rooms.Add(room);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetRoom", new { id = room.ID }, room);
+            await _room.CreateRoom(room);
+            return CreatedAtAction("GetCourseById", new { id = room.ID }, room);
         }
 
         // DELETE: api/Rooms/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRoom(int id)
         {
-            if (_context.rooms == null)
-            {
-                return NotFound();
-            }
-            var room = await _context.rooms.FindAsync(id);
-            if (room == null)
-            {
-                return NotFound();
-            }
-
-            _context.rooms.Remove(room);
-            await _context.SaveChangesAsync();
-
+           await _room.Delete(id);
             return NoContent();
+
         }
 
-        private bool RoomExists(int id)
-        {
-            return (_context.rooms?.Any(e => e.ID == id)).GetValueOrDefault();
-        }
     }
 }
